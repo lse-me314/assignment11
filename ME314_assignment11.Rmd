@@ -79,19 +79,17 @@ eta <- 0.02 # Prior for topic distributions
 
 # # Don't run!
 # # Fit the model
-# t1 <- Sys.time() # Start timer
-# 
-# fit <- lda.collapsed.gibbs.sampler(documents = speechDfmlda$documents, K = K,
-#                                        vocab = speechDfmlda$vocab,
-#                                       num.iterations = G, alpha = alpha,
-#                                      eta = eta, initial = NULL, burnin = 0,
-#                                       compute.log.likelihood = TRUE)
-# t2 <- Sys.time() # End timer
-# 
-# t2 - t1  # about 15 minutes on Jack's MacBook Pro
-# save(fit, file = "fitted_lda.rda")
+t1 <- Sys.time() # Start timer
 
-load("fitted_lda.rda")
+fit <- lda.collapsed.gibbs.sampler(documents = speechDfmlda$documents, K = K,
+                                        vocab = speechDfmlda$vocab,
+                                       num.iterations = G, alpha = alpha,
+                                      eta = eta, initial = NULL, burnin = 0,
+                                       compute.log.likelihood = TRUE)
+ t2 <- Sys.time() # End timer
+ 
+ t2 - t1  # about 15 minutes on Jack's MacBook Pro
+
 
 ```
 
