@@ -6,12 +6,3 @@ You should clone this repository to get started with this lab.  The URL to clone
 
 * [Rmarkdown](ME314_assignment11.Rmd).
 * [html](ME314_assignment11.html)
-
-<!----
-
-### Solutions
- 
-Solution to Assignment 11:
-*  [html](ME314_assignment11_solution.html) 
-*  [RMarkdown](ME314_assignment11_solution.Rmd)  
----->
