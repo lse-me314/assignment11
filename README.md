@@ -6,3 +6,5 @@ You should clone this repository to get started with this lab.  The URL to clone
 
 * [Rmarkdown](ME314_assignment11.Rmd).
 * [html](ME314_assignment11.html)
+
+For this assignment, you will also need to download the following `.Rdata` file: [hoc_speeches.Rdata](hoc_speeches.Rdata)
