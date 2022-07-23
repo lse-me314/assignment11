@@ -37,12 +37,7 @@ load("hoc_speeches.Rdata")
     (iii) Stemming?
     (iv) Very infrequent words?
 
-(d) Run a structural topic model for this corpus, using the `gender` variable in the topic prevalence argument. Use the `stm` function to do this. Set the `seed` argument to `stm` to be equal to `123`. Be aware, this takes about 5 minutes to run on Jack's iMac -- for testing purposes you might want to set the maximum iterations for the stm to be some low number (`max.em.its = 10` for instance). Remember, you will need to select a value for `K` (I have used `K = 20`).
-
-    Specify and estimate the `stm` model:
-
-
-    Plot the estimated topic model using the `plot()` function on your estimated topic model:
+(d) Run a structural topic model for this corpus, using the `gender` variable in the topic prevalence argument. Use the `stm` function to do this. Set the `seed` argument to `stm` to be equal to `123`. Be aware, this takes about 3 minutes to run on Jack's iMac -- for testing purposes you might want to set the maximum iterations for the stm to be some low number (`max.em.its = 10` for instance). Remember, you will need to select a value for `K` (I have used `K = 20`).
 
 (e) Examine the top words from each topic (see the `labelTopics()` function help file).
 
@@ -98,7 +93,7 @@ fit <- lda.collapsed.gibbs.sampler(documents = speechDfmlda$documents, K = K,
                                    eta = eta, initial = NULL, burnin = 0,
                                    compute.log.likelihood = TRUE)
 t2 <- Sys.time() # End timer
-t2 - t1  # about 5 minutes on Jack's iMac
+t2 - t1  # about 7 minutes on Jack's iMac
 ```
 
 Now we plot the model using `LDAvis`.
@@ -128,6 +123,6 @@ data(data_corpus_movies, package = "quantedaData")
 
 (d) Use the estimated document probabilities to extract the text of one movie from the topic that most appeals to you. Would you want to watch that movie? Your answer will clearly reveal something about your personality.
 
-    The output of `lda.collapsed.gibbs.sampler()` doesn't actually include the topic proportions for each document. Instead, the `fit$document_sums` element includes the number of times that each word in each document (columns) were assigned to each topic (rows). To translate these into proportions, we need to divide the word count for each document by the total number of words in the document. Rather than doing this row by row, try using the `apply()` function to apply the same calculation to every column in the matrix. See `?apply()` for more help on this.
+The output of `lda.collapsed.gibbs.sampler()` doesn't actually include the topic proportions for each document. Instead, the `fit$document_sums` element includes the number of times that each word in each document (columns) were assigned to each topic (rows). To translate these into proportions, we need to divide the word count for each document by the total number of words in the document. Rather than doing this row by row, try using the `apply()` function to apply the same calculation to every column in the matrix. See `?apply()` for more help on this.
     
-    To get the top scoring words for each topic, use the `top.topic.words()` function (see the help file for more information).
+To get the top scoring words for each topic, use the `top.topic.words()` function (see the help file for more information).
