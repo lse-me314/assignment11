@@ -17,9 +17,11 @@ You will need to load the following packages before beginning the assignment
 library(stm)
 library(tidyverse)
 library(quanteda)
+library(wordcloud)
 # If you cannot load these libraries, try installing them first. E.g.: 
 # install.packages("stm")
 ```
+
 
 ## Data
 
@@ -39,6 +41,15 @@ Today we will use data on 4067 Human Rights Reports from the US State Department
 : Variables in the `human_rights` data.
 
 This data is not stored on GitHub because the file is to large. Instead, you will need to download it from [this Dropbox link](https://dl.dropboxusercontent.com/s/dv4dp6mpzi9lbbo/human_rights_reports.csv?dl=0).
+
+You can get R to do this directly:
+
+```{r, echo = TRUE, eval = FALSE}
+
+utils::download.file(url = 'https://dl.dropboxusercontent.com/s/dv4dp6mpzi9lbbo/human_rights_reports.csv',
+                     destfile = 'human_rights_reports.csv')
+
+```
 
 Once you have downloaded the file and stored it somewhere sensible, you can load it into R:
 

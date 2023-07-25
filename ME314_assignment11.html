@@ -384,6 +384,7 @@ assignment</p>
 <pre class="r"><code>library(stm)
 library(tidyverse)
 library(quanteda)
+library(wordcloud)
 # If you cannot load these libraries, try installing them first. E.g.: 
 # install.packages(&quot;stm&quot;)</code></pre>
 </div>
@@ -446,10 +447,13 @@ by the US.</td>
 <p>This data is not stored on GitHub because the file is to large.
 Instead, you will need to download it from <a href="https://dl.dropboxusercontent.com/s/dv4dp6mpzi9lbbo/human_rights_reports.csv?dl=0">this
 Dropbox link</a>.</p>
+<p>You can get R to do this directly:</p>
+<pre class="r"><code>utils::download.file(url = &#39;https://dl.dropboxusercontent.com/s/dv4dp6mpzi9lbbo/human_rights_reports.csv&#39;,
+                     destfile = &#39;human_rights_reports.csv&#39;)</code></pre>
 <p>Once you have downloaded the file and stored it somewhere sensible,
 you can load it into R:</p>
 <pre class="r"><code>human_rights &lt;- read_csv(&quot;human_rights_reports.csv&quot;)</code></pre>
-<pre><code>## Rows: 4067 Columns: 16
+<pre><code>## Rows: 3949 Columns: 16
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
 ## chr  (2): cname, report
@@ -461,7 +465,7 @@ you can load it into R:</p>
 <code>glimpse()</code> function from the <code>tidyverse</code>
 package:</p>
 <pre class="r"><code>glimpse(human_rights)</code></pre>
-<pre><code>## Rows: 4,067
+<pre><code>## Rows: 3,949
 ## Columns: 16
 ## $ cname             &lt;chr&gt; &quot;Albania&quot;, &quot;Albania&quot;, &quot;Albania&quot;, &quot;Albania&quot;, &quot;Albania…
 ## $ year              &lt;dbl&gt; 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988…
