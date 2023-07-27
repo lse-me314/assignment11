@@ -1,0 +1,372 @@
+---
+title: "Assignment 11 - Topic Models (Solution)"
+author: "Jack Blumenau"
+output: html_document
+---
+## Topic Models of Human Rights Reports
+
+The US State Department has produced regular reports on human rights practices across the world for many years. These monitoring reports play an important role both in the international human rights regime and in the production of human rights data. In a paper published in 2018, [Benjamin Baozzi and Daniel Berliner](https://doi.org/10.1017/psrm.2016.44) analyse these reports in order to identify a set of topics and describe how these vary over time and space.
+
+In today's seminar, we will analyse the US State Department's annual Country Reports on Human Rights Practices (1977--2012), by applying structural topic models (STMs) to identify the underlying topics of attention and scrutiny across the entire corpus and in each individual report. We will also assess the extent to which the prevalence of different topics in the corpus is related to covariates pertaining to each countries' relationship with the US.
+
+## Packages
+
+You will need to load the following packages before beginning the assignment
+
+```{r, echo = TRUE, eval=TRUE, message=FALSE, warning=FALSE}
+library(stm)
+library(tidyverse)
+library(quanteda)
+library(wordcloud)
+# If you cannot load these libraries, try installing them first. E.g.: 
+# install.packages("stm")
+```
+
+## Data
+
+```{r, echo = FALSE, eval = TRUE, warning=FALSE, message=FALSE}
+
+human_rights <- read_csv("data/human_rights_reports.csv")
+
+```
+
+Today we will use data on `r nrow(human_rights)` Human Rights Reports from the US State Department. The table below describes some of the variables included in the data:
+
+| Variable         | Description                                                                                               |
+|:-------------------|:---------------------------------------------------|
+| `cname`          | The name of the country which is the subject of the report                                                |
+| `year`           | The year of the report                                                                                    |
+| `report`         | The text of the report (note that these texts have already been stemmed and stop words have been removed) |
+| `alliance`       | Whether the country has a formal military alliance with the United States (1) or not (0).                 |
+| `p_polity2`      | The polity score for the country                                                                          |
+| `logus_aid_econ` | The (log) level of foreign aid provided to the country by the US.                                         |
+| `oecd`           | OECD membership dummy                                                                                     |
+| `civil_war`      | Civil war dummy                                                                                           |
+
+: Variables in the `human_rights` data.
+
+This data is not stored on GitHub because the file is to large. Instead, you will need to download it from [this Dropbox link](https://dl.dropboxusercontent.com/s/dv4dp6mpzi9lbbo/human_rights_reports.csv?dl=0).
+
+You can get R to do this directly:
+
+```{r, echo = TRUE, eval = FALSE}
+
+utils::download.file(url = 'https://dl.dropboxusercontent.com/s/dv4dp6mpzi9lbbo/human_rights_reports.csv',
+                     destfile = 'human_rights_reports.csv')
+
+```
+
+Once you have downloaded the file and stored it somewhere sensible, you can load it into R:
+
+```{r, echo = TRUE, eval = FALSE}
+
+human_rights <- read_csv("human_rights_reports.csv")
+
+```
+
+You can take a quick look at the variables in the data by using the `glimpse()` function from the `tidyverse` package:
+
+```{r, echo = TRUE, eval = TRUE}
+
+glimpse(human_rights)
+
+```
+
+## STM without covariates
+
+We will begin by implementing the null model of the Structural Topic Model. This model is equivalent to the Correlated Topic Model -- a close cousin of the LDA model that we covered in the lecture, though one in which the topics in the corpus are allowed to be correlated with each other (LDA assumes that topics are uncorrelated).
+
+The `stm()` function from the `stm` package can be used to fit the model. There are a few different arguments that you will need to specify for this function:
+
+| Argument     | Description                                                                                                                         |
+|:-------------------|:---------------------------------------------------|
+| `documents`  | The DFM on which you intend to fit the stm model.                                                                                   |
+| `K`          | The number of topics you wish to estimate.                                                                                          |
+| `prevalence` | A formula (with no response variable) specifying the covariates you wish to use to model the topic prevalences across documents.    |
+| `content`    | A formula (with no response variable) specifying the covariate you wish to use to model the content of each topic across documents. |
+| `seed`       | A seed number to make the results replicable.                                                                                       |
+
+: Arguments to the `stm` function.
+
+1.  Create a corpus from the `human_rights` data. Then create a dfm, making some feature selection decisions.
+
+*Note*: Topic models can take a long time to estimate so I would advise that you trim the DFM to keep it reasonably small for now.
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+human_rights_corpus <- human_rights %>%
+  corpus(text_field = "report")
+
+human_rights_dfm <- human_rights_corpus %>%
+                        tokens() %>%
+                        dfm()
+
+human_rights_dfm <- human_rights_dfm %>%
+  dfm_trim(min_docfreq = .1,
+           max_docfreq = .9,
+           docfreq_type = "prop")
+
+```
+
+</details>
+
+2.  Use the `stm()` function from the `stm` package to fit a topic model. Choose an appropriate number of topics. You should not use any covariates in answer to this question. As the STM model will take a while to run (probably a minute or two), you should make sure you save the output of the model so that you don't need to run this code repeatedly.
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, warning=FALSE, message=FALSE}
+
+stm_out <- stm(documents = human_rights_dfm,
+               K = 15,
+               seed = 12345, 
+               verbose = FALSE)
+
+```
+
+```{r, eval=FALSE, echo=TRUE}
+
+save(stm_out, file = "stm_out.Rdata")
+
+```
+
+</details>
+
+3.  Use the `plot()` function to assess how common each topic is in this corpus. What is the most common topic? What is the least common?
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+plot(stm_out)
+
+```
+
+</details>
+
+4.  Use the `labelTopics()` function to extract the most distinctive words for each topic. Do some interpretation of these topic "labels".[^seminar7-2] Is there a sexual violence topic? Is there a topic about electoral manipulation? Create two word clouds illustrating two of the most interesting topics using the `cloud()` function.
+
+*Note*: The `stm` package provides various different metrics for weighting words in estimated topic models. The most relevant two for our purposes are `Highest Prob` and `FREX`. `Highest Prob` simply reports the words that have the highest probability within each topic (i.e. inferred directly from the $\beta$ parameters). `FREX` is a weighting that takes into account both frequency and exclusivity (words are upweighted when they are common in one topic but uncommon in other topics).
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+labelTopics(stm_out)
+
+```
+
+```{r, eval=TRUE, echo=TRUE, warning=FALSE, message=FALSE}
+
+cloud(stm_out, 4) 
+
+cloud(stm_out, 11) 
+             
+
+```
+
+</details>
+
+5.  Access the document-level topic-proportions from the estimated STM object (use `stm_out$theta`). How many rows does this matrix have? How many columns? What do the rows and columns represent?
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+dim(stm_out$theta)
+
+```
+
+> This matrix has `r nrow(stm_out$theta)` rows and `r ncol(stm_out$theta)` columns. The rows here are the documents and the columns represent topics. The value for each cell of this matrix is the proportion of document $d$ allocated to topic $k$.
+
+> For example, let's look at the first row of this matrix:
+
+```{r, eval=TRUE, echo=TRUE}
+
+stm_out$theta[1,]
+
+```
+
+> We can see that the first document in our collection is mostly about topic `r which.max(stm_out$theta[1,])`, because `r round(max(stm_out$theta[1,])*100)`% of the document is allocated to that topic.
+
+</details>
+
+6.  Pick one of the topics and plot it against the `year` variable from the `human_rights` data. What does this plot suggest?
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+# Assign the topic of interest to the data
+# I have chosen topic 4, you might have selected something else.
+human_rights$sexual_violence_topic <- stm_out$theta[,4]
+
+human_rights %>%
+  ggplot(aes(x = year, y = sexual_violence_topic)) +
+  geom_point(alpha = .2) + 
+  theme_bw()
+
+```
+
+> There is evidence that this topic has become much more prominent in the country reports over time.
+
+</details>
+
+## STM with covariates
+
+1.  A key innovation of the stm is that it allows us to include arbitrary covariates into the text model, allowing us to assess the degree to which topics vary with document metadata. In this question, you should fit another stm, this time including a covariate in the `prevalence` argument. You can pick any covariate that you think is likely to show interesting relationships with the estimated topics. Again, remember to save your model output so that you don't need to estimate the model more than once.
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+stm_out_prevalence <- stm(documents = human_rights_dfm,
+                          prevalence = ~alliance,
+                          K = 15,
+                          seed = 12345, 
+                          verbose = FALSE)
+
+```
+
+```{r, eval=FALSE, echo=TRUE}
+
+save(stm_out_prevalence, file = "stm_out_prevalence.Rdata")
+
+```
+
+</details>
+
+2.  We will want to be able to keep track of the estimated topics from this model for use in the plotting functions later. Create a vector of topic labels from the words with the highest `"frex"` scores for each topic.
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+# Extract the matrix of words with highest frex scores
+topic_labels_matrix <- labelTopics(stm_out_prevalence, n = 7)$frex
+
+# Collapse the words for each topic into a single label
+topic_labels <- apply(topic_labels_matrix, 1, paste0, collapse = "_")
+
+topic_labels
+
+```
+
+> Note that the topics here differ somewhat from the topics we recovered using the stm without covariates. This is because here we have estimated a slightly different model, resulting in a slightly different distribution over words. This is one of the core weaknesses of topic models as the results are at least somewhat sensitive to model specification.
+
+</details>
+
+3.  Use the `estimateEffect()` function to estimate differences in topic usage by one of the covariates in the `human_rights` data. This function takes three main arguments:
+
+| Argument   | Description                                                                                                                                                                                |
+|:-------------------|:---------------------------------------------------|
+| `formula`  | A formula for the regression. Should be of the form `c(1,2,3) ~ covariate_name`, where the numbers on the left-hand side indicate the topics for which you would like to estimate effects. |
+| `stmobj`   | The model output from the `stm()` function.                                                                                                                                                |
+| `metadata` | A `data.frame` where the covariates are to be found. You can use `docvars(my_dfm)` for the `dfm` you used to estimate the original model.                                                  |
+
+: Arguments to the `estimateEffect` function.
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+# Estimating the effects of having an alliance with the US for *all* topics
+prevalence_effects <- estimateEffect(formula = c(1:15) ~ alliance, 
+                              stmobj = stm_out_prevalence,
+                              metadata = docvars(human_rights_dfm))
+
+```
+
+</details>
+
+4.  Use the `summary()` function to extract the estimated regression coefficients. For which topics do you find evidence of a significant relationship with the covariate you selected?
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+summary(prevalence_effects)
+
+```
+
+> Most of them!
+
+</details>
+
+5.  Plot some of the more interesting differences that you just estimated using the `plot.estimateEffect()` function. There are various different arguments that you can provide to this function. See the help file for assistance here (`?plot.estimateEffect`).
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=TRUE, echo=TRUE}
+
+plot.estimateEffect(prevalence_effects,
+     topics = 4,
+     covariate = "alliance",
+     method = "pointestimate",
+     main = topic_labels[4])
+
+plot.estimateEffect(prevalence_effects,
+     topics = 14,
+     covariate = "alliance",
+     method = "pointestimate",
+     main = topic_labels[14])
+
+```
+
+</details>
+
+6. Fit an STM model which allows the *content* of the topics to vary by one of the covariates in the data. You can do so by making use of the `content` argument to the `stm()` function (see the lecture slides for an example). Once you have estimated the model, inspect the output and create at least one plot which demonstrates how word use for a given topic differs for the covariate you included in the model. (Note: The use of the `content()` argument can cause the model to take a long time to converge so you will need to be patient!)
+
+<details>
+
+<summary>Reveal code</summary>
+
+```{r, eval=FALSE, echo=TRUE}
+
+stm_out_content <- stm(documents = human_rights_dfm,
+                          content = ~alliance,
+                          K = 15,
+                          seed = 12345, 
+                          verbose = FALSE)
+
+
+```
+
+```{r, eval=FALSE, echo=TRUE}
+
+plot(stm_out_content, 
+     topics = c(3),
+     type = "perspectives")
+
+
+plot(stm_out_content, 
+     topics = c(1),
+     type = "perspectives")
+
+
+```
+
+</details>
